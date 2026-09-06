@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>指導カルテ</title>
+<style>
+  :root{
+    --bg:#E4E9ED;
+    --surface:#FFFFFF;
+    --ink:#16273D;
+    --ink-2:#5C6E82;
+    --line:#C7D0D8;
+    --red:#B5342C;
+    --green:#2A6E52;
+    --amber:#8A6420;
+    --radius:3px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic Medium","Yu Gothic",Meiryo,system-ui,sans-serif;
+    font-size:15px;line-height:1.7;
+    padding-bottom:80px;
+  }
+  .wrap{max-width:680px;margin:0 auto;padding:0 14px}
+
+  header{
+    background:var(--ink);color:#fff;
+    padding:14px 0 12px;
+    border-bottom:3px solid var(--red);
+  }
+  header .wrap{display:flex;align-items:baseline;gap:10px}
+  h1{font-size:17px;margin:0;letter-spacing:.08em;font-weight:600}
+  header .sub{font-size:11px;color:#9FB2C6;letter-spacing:.04em}
+
+  nav{
+    position:sticky;top:0;z-index:20;
+    background:var(--surface);border-bottom:1px solid var(--line);
+    display:flex;
+  }
+  nav button{
+    flex:1;appearance:none;border:0;background:none;
+    font:inherit;font-size:13px;color:var(--ink-2);
+    padding:12px 4px;cursor:pointer;border-bottom:2px solid transparent;
+  }
+  nav button[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--red)}
+  nav button:focus-visible{outline:2px solid var(--red);outline-offset:-2px}
+
+  section[hidden]{display:none}
+  .panel{padding-top:18px}
+
+  .card{
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:14px;margin-bottom:12px;
+  }
+  .card h2{font-size:14px;margin:0 0 10px;font-weight:600}
+
+  label{display:block;font-size:12px;color:var(--ink-2);margin:12px 0 5px}
+  label:first-child{margin-top:0}
+  input[type=text],input[type=date],select,textarea{
+    width:100%;font:inherit;font-size:16px;
+    padding:9px 10px;border:1px solid var(--line);border-radius:var(--radius);
+    background:#FBFCFD;color:var(--ink);
+  }
+  textarea{min-height:56px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--ink);outline-offset:-1px}
+
+  .btn{
+    appearance:none;font:inherit;font-size:14px;cursor:pointer;
+    padding:10px 16px;border-radius:var(--radius);
+    border:1px solid var(--ink);background:var(--ink);color:#fff;
+  }
+  .btn.ghost{background:none;color:var(--ink)}
+  .btn.small{padding:6px 11px;font-size:12px}
+  .btn:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+  /* 採点ボタン：赤ペンの感触をここに集中させる */
+  .grade{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  .grade button{
+    appearance:none;font:inherit;cursor:pointer;
+    padding:16px 8px;border-radius:var(--radius);
+    background:var(--surface);font-size:15px;font-weight:600;
+  }
+  .grade .ok{border:2px solid var(--green);color:var(--green)}
+  .grade .ng{border:2px solid var(--red);color:var(--red)}
+  .grade button[aria-pressed="true"].ok{background:var(--green);color:#fff}
+  .grade button[aria-pressed="true"].ng{background:var(--red);color:#fff}
+  .grade button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .chip{
+    appearance:none;font:inherit;font-size:12px;cursor:pointer;
+    padding:5px 10px;border:1px solid var(--line);background:var(--surface);
+    color:var(--ink-2);border-radius:14px;
+  }
+  .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+
+  .note{font-size:12px;color:var(--ink-2);margin:8px 0 0}
+  .empty{
+    border:1px dashed var(--line);border-radius:var(--radius);
+    padding:22px 14px;text-align:center;color:var(--ink-2);font-size:13px;
+    background:rgba(255,255,255,.5);
+  }
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;color:var(--ink-2);font-weight:600}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+
+  .bar{height:6px;background:#DCE3E9;border-radius:3px;overflow:hidden;min-width:56px}
+  .bar span{display:block;height:100%;background:var(--green)}
+  .bar.weak span{background:var(--red)}
+  .bar.mid span{background:var(--amber)}
+
+  .stu{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
+    padding:10px 0;border-bottom:1px solid var(--line);
+  }
+  .stu:last-child{border-bottom:0}
+  .stu .name{font-weight:600}
+  .stu .meta{font-size:12px;color:var(--ink-2)}
+
+  .stu-edit{padding:12px 0;border-bottom:1px solid var(--line)}
+  .stu-edit:last-child{border-bottom:0}
+
+  .editing{
+    background:#F4F7F9;border:1px solid var(--ink);border-radius:var(--radius);
+    padding:12px;margin:8px 0;
+  }
+  .editing .ttl{font-size:12px;font-weight:600;margin-bottom:4px}
+  .editing .grade button{padding:12px 8px;font-size:14px}
+
+  .taglist{display:flex;flex-wrap:wrap;gap:6px}
+  .taglist .item{
+    display:flex;align-items:center;gap:4px;font-size:12px;
+    border:1px solid var(--line);border-radius:14px;padding:3px 4px 3px 10px;background:var(--surface);
+  }
+  .taglist .item button{
+    appearance:none;border:0;background:none;font:inherit;font-size:11px;cursor:pointer;
+    color:var(--ink-2);padding:2px 5px;border-radius:10px;
+  }
+  .taglist .item button:hover{color:var(--red)}
+
+  .photo{
+    border:1px solid var(--line);border-radius:var(--radius);
+    background:#F4F7F9;padding:12px;margin-bottom:14px;
+  }
+  .photo .lead{font-size:13px;font-weight:600;margin:0 0 6px}
+  .drop{
+    display:block;border:1px dashed var(--ink-2);border-radius:var(--radius);
+    padding:16px 12px;text-align:center;font-size:13px;color:var(--ink-2);
+    cursor:pointer;background:var(--surface);
+  }
+  .drop:hover{border-color:var(--ink);color:var(--ink)}
+  .thumb{max-width:100%;max-height:180px;border-radius:var(--radius);border:1px solid var(--line);display:block;margin:10px auto 0}
+  .busy{font-size:12px;color:var(--ink-2);margin-top:8px}
+  .busy::after{content:'…';animation:dots 1.2s steps(4,end) infinite}
+  @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+  .keybox{border-top:1px solid var(--line);margin-top:12px;padding-top:12px}
+
+  .log{padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .log:last-child{border-bottom:0}
+  .log .head{display:flex;gap:8px;align-items:baseline}
+  .log .mark{font-weight:700;flex:none}
+  .log .mark.o{color:var(--green)}
+  .log .mark.x{color:var(--red)}
+  .log .src{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .log .d{font-size:11px;color:var(--ink-2);flex:none}
+  .log .tags{font-size:11px;color:var(--ink-2);margin-top:2px}
+
+  pre.out{
+    background:#F4F7F9;border:1px solid var(--line);border-radius:var(--radius);
+    padding:12px;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-word;
+    max-height:340px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  .toast{
+    position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
+    background:var(--ink);color:#fff;padding:10px 18px;border-radius:var(--radius);
+    font-size:13px;z-index:60;opacity:0;pointer-events:none;transition:opacity .18s;
+  }
+  .toast.show{opacity:1}
+  .warn{
+    background:#FDF3F2;border:1px solid #E8C3BF;border-left:3px solid var(--red);
+    padding:10px 12px;font-size:12px;color:#7A2620;border-radius:var(--radius);margin-bottom:12px;
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>指導カルテ</h1>
+    <span class="sub">記録 → 分析 → 次の一手</span>
+  </div>
+</header>
+
+<nav class="wrap" role="tablist" style="padding:0">
+  <button role="tab" id="t-rec" aria-selected="true" onclick="tab('rec')">記録</button>
+  <button role="tab" id="t-ana" aria-selected="false" onclick="tab('ana')">分析</button>
+  <button role="tab" id="t-ai"  aria-selected="false" onclick="tab('ai')">AIに相談</button>
+  <button role="tab" id="t-stu" aria-selected="false" onclick="tab('stu')">生徒</button>
+</nav>
+
+<main class="wrap">
+
+<!-- ============ 記録 ============ -->
+<section id="p-rec" class="panel">
+  <div class="warn">問題文そのものは保存しません。出典と分野タグだけを残します。</div>
+
+  <div class="card">
+    <h2>1問を記録する</h2>
+
+    <div class="photo">
+      <p class="lead">写真から下書きする</p>
+      <p class="note" style="margin:0 0 8px">問題を撮ると、出典とタグの候補を埋めます。<strong>写真は保存されず、読み取り後すぐ消えます。</strong></p>
+      <label class="drop" for="pic-rec">写真を撮る／選ぶ</label>
+      <input type="file" id="pic-rec" accept="image/*" capture="environment" style="display:none" onchange="analyzePhoto(this)">
+      <img id="pic-thumb" class="thumb" hidden alt="読み取り中の写真">
+      <div id="pic-busy" class="busy" hidden>読み取っています</div>
+      <div id="pic-result" class="note" hidden></div>
+    </div>
+
+    <div id="rec-form">
+      <label for="f-stu">生徒</label>
+      <select id="f-stu"></select>
+
+      <label for="f-date">日付</label>
+      <input type="date" id="f-date">
+
+      <label for="f-src">出典（どの問題か分かる目印）</label>
+      <input type="text" id="f-src" placeholder="例：北大2019 大問2 (3) ／ ターゲット1900 p.42">
+
+      <label>分野タグ<span class="note" style="display:inline;margin-left:6px">複数選べます</span></label>
+      <div class="chips" id="f-tags"></div>
+      <div class="row" style="margin-top:8px">
+        <input type="text" id="f-newtag" placeholder="タグを追加" style="flex:1;min-width:140px;font-size:14px;padding:7px 9px">
+        <button class="btn ghost small" onclick="addTag()">追加</button>
+      </div>
+
+      <label>採点</label>
+      <div class="grade">
+        <button type="button" class="ok" id="g-ok" aria-pressed="false" onclick="setGrade(true)">正解</button>
+        <button type="button" class="ng" id="g-ng" aria-pressed="false" onclick="setGrade(false)">不正解</button>
+      </div>
+
+      <div id="reason-box" hidden>
+        <label for="f-reason">つまずいた理由</label>
+        <select id="f-reason"></select>
+      </div>
+
+      <label for="f-memo">メモ（任意）</label>
+      <textarea id="f-memo" placeholder="例：thatが何を指すか追えていない"></textarea>
+
+      <div class="row" style="margin-top:14px">
+        <button class="btn" onclick="saveRecord()">記録する</button>
+        <span class="note" id="rec-hint"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h2 style="margin:0">記録した問題</h2>
+      <button class="btn ghost small" id="btn-all" onclick="toggleAll()">すべて表示</button>
+    </div>
+    <p class="note" style="margin:0 0 4px">記録は後から直せます。行の「編集」から変更してください。</p>
+    <div id="recent"></div>
+  </div>
+</section>
+
+<!-- ============ 分析 ============ -->
+<section id="p-ana" class="panel" hidden>
+  <div class="card">
+    <label for="a-stu">生徒</label>
+    <select id="a-stu" onchange="renderAnalysis()"></select>
+  </div>
+  <div id="ana-body"></div>
+</section>
+
+<!-- ============ AIに相談 ============ -->
+<section id="p-ai" class="panel" hidden>
+  <div class="card">
+    <h2>AIに渡す文章をつくる</h2>
+    <p class="note" style="margin-top:0">記録を要約した文章を組み立てます。コピーしてAIチャットに貼れば、そのまま次の対策を相談できます。</p>
+    <label for="ai-stu">生徒</label>
+    <select id="ai-stu"></select>
+    <label for="ai-ask">相談したいこと</label>
+    <select id="ai-ask">
+      <option>弱点に効く練習問題を作ってほしい</option>
+      <option>次回授業の15分タスクを組んでほしい</option>
+      <option>この2週間の変化をどう読むか意見がほしい</option>
+      <option>宿題の出し方を見直したい</option>
+    </select>
+
+    <div class="photo" style="margin-top:14px">
+      <p class="lead">参考の写真を添える（任意）</p>
+      <p class="note" style="margin:0 0 8px">生徒の答案や、つまずいた問題を撮って添えられます。<strong>相談に使うだけで保存はしません。</strong></p>
+      <label class="drop" for="pic-ai">写真を撮る／選ぶ</label>
+      <input type="file" id="pic-ai" accept="image/*" capture="environment" style="display:none" onchange="attachPhoto(this)">
+      <img id="ai-thumb" class="thumb" hidden alt="添える写真">
+      <div class="row" id="ai-thumb-row" hidden style="margin-top:8px;justify-content:center">
+        <button class="btn ghost small" onclick="clearPhoto()">写真を外す</button>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <button class="btn" onclick="runConsult()">この場で相談する</button>
+      <button class="btn ghost" onclick="buildPrompt()">文章だけ作る</button>
+      <button class="btn ghost" onclick="copyPrompt()">コピー</button>
+    </div>
+    <div id="ai-busy" class="busy" hidden>考えています</div>
+    <pre class="out" id="ai-out" style="margin-top:12px">まだ何も出ていません。</pre>
+
+    <div class="keybox">
+      <label for="apikey">APIキー（このファイルを単体で使うときだけ必要）</label>
+      <input type="text" id="apikey" placeholder="sk-ant-… 未入力でも Claude 内なら動きます" onchange="saveKey()">
+      <p class="note">この端末にだけ保存され、外には出ません。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>データの持ち出しと復元</h2>
+    <p class="note" style="margin:0 0 4px">保存先：<span id="store-where">確認中</span></p>
+    <p class="note" style="margin:0 0 10px">JSONで書き出しておけば、消えても戻せます。別の端末に移すときも同じです。</p>
+    <div class="row">
+      <button class="btn ghost small" onclick="exportJSON()">JSONで書き出す</button>
+      <label class="btn ghost small" for="imp" style="display:inline-block">JSONから読み込む</label>
+      <input type="file" id="imp" accept=".json,application/json" style="display:none" onchange="importJSON(this)">
+      <button class="btn ghost small" onclick="exportCSV()">CSVで書き出す</button>
+    </div>
+    <p class="note" id="imp-msg" hidden></p>
+  </div>
+</section>
+
+<!-- ============ 生徒 ============ -->
+<section id="p-stu" class="panel" hidden>
+  <div class="card">
+    <h2>生徒を追加する</h2>
+    <p class="note" style="margin-top:0">本名は入れず、偽名や記号で登録してください。</p>
+    <label for="s-name">呼び名</label>
+    <input type="text" id="s-name" placeholder="例：生徒K">
+    <label for="s-note">メモ（学年・志望校・現状など）</label>
+    <input type="text" id="s-note" placeholder="例：工業高校3年／難関国公立志望／文法が弱い">
+    <div class="row" style="margin-top:14px">
+      <button class="btn" onclick="addStudent()">追加する</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>登録済み</h2>
+    <div id="stu-list"></div>
+  </div>
+  <div class="card">
+    <h2>分野タグの管理</h2>
+    <p class="note" style="margin:0 0 10px">名前を変えると、過去の記録のタグもまとめて書き換わります。</p>
+    <div class="taglist" id="tag-admin"></div>
+  </div>
+</section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- 保存まわり（Claude内でもファイル単体でも動くように） ---------- */
+const KEY = 'juku-karte-v1';
+const hasCloud = typeof window.storage !== 'undefined' && window.storage;
+
+async function load(){
+  try{
+    if(hasCloud){
+      const r = await window.storage.get(KEY);
+      return r && r.value ? JSON.parse(r.value) : null;
+    }
+    const raw = localStorage.getItem(KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+async function save(){
+  const json = JSON.stringify(DB);
+  try{
+    if(hasCloud){ await window.storage.set(KEY, json); }
+    else { localStorage.setItem(KEY, json); }
+  }catch(e){ toast('保存できませんでした'); }
+}
+
+/* ---------- データ ---------- */
+const DEFAULT_TAGS = ['単語・熟語','無生物主語','名詞構文','代名詞','関係詞','時制','長文読解','和訳','英作文','リスニング'];
+const REASONS = ['単語・熟語を知らない','文法の理解不足','構文の取り違え','内容の読み違え','ケアレスミス','時間切れ','手つかず'];
+
+let DB = { students:[], records:[], tags:[...DEFAULT_TAGS] };
+let sel = { tags:new Set(), correct:null };
+
+/* ---------- 画面切替 ---------- */
+function tab(id){
+  ['rec','ana','ai','stu'].forEach(k=>{
+    document.getElementById('p-'+k).hidden = (k!==id);
+    document.getElementById('t-'+k).setAttribute('aria-selected', String(k===id));
+  });
+  if(id==='ana') renderAnalysis();
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- 生徒 ---------- */
+async function addStudent(){
+  const name = document.getElementById('s-name').value.trim();
+  if(!name){ toast('呼び名を入れてください'); return; }
+  DB.students.push({ id:'s'+Date.now(), name, note:document.getElementById('s-note').value.trim() });
+  document.getElementById('s-name').value=''; document.getElementById('s-note').value='';
+  await save(); renderStudents(); fillSelects(); toast(name+' を追加しました');
+}
+async function delStudent(id){
+  const s = DB.students.find(x=>x.id===id);
+  const n = DB.records.filter(r=>r.sid===id).length;
+  if(!confirm(s.name+' と記録'+n+'件を消します。よろしいですか？')) return;
+  DB.students = DB.students.filter(x=>x.id!==id);
+  DB.records  = DB.records.filter(r=>r.sid!==id);
+  await save(); renderStudents(); fillSelects(); renderRecent(); toast('削除しました');
+}
+let editingStu = null;
+
+function renderStudents(){
+  const el = document.getElementById('stu-list');
+  if(!DB.students.length){ el.innerHTML = '<div class="empty">まだ誰も登録されていません。上のフォームから追加してください。</div>'; return; }
+  el.innerHTML = DB.students.map(s=>{
+    const n = DB.records.filter(r=>r.sid===s.id).length;
+    if(editingStu === s.id){
+      return `<div class="stu-edit">
+        <label for="e-name-${s.id}">呼び名</label>
+        <input type="text" id="e-name-${s.id}" value="${esc(s.name)}">
+        <label for="e-note-${s.id}">メモ</label>
+        <input type="text" id="e-note-${s.id}" value="${esc(s.note||'')}">
+        <div class="row" style="margin-top:12px">
+          <button class="btn small" onclick="saveStudent('${s.id}')">保存する</button>
+          <button class="btn ghost small" onclick="editingStu=null;renderStudents()">やめる</button>
+          <button class="btn ghost small" style="margin-left:auto;border-color:var(--red);color:var(--red)" onclick="delStudent('${s.id}')">削除</button>
+        </div>
+      </div>`;
+    }
+    return `<div class="stu">
+      <div><div class="name">${esc(s.name)}</div>
+      <div class="meta">${esc(s.note||'メモなし')}<br>記録 ${n} 件</div></div>
+      <button class="btn ghost small" onclick="editStudent('${s.id}')">編集</button>
+    </div>`;
+  }).join('');
+}
+function editStudent(id){ editingStu = id; renderStudents(); }
+async function saveStudent(id){
+  const s = DB.students.find(x=>x.id===id);
+  const name = document.getElementById('e-name-'+id).value.trim();
+  if(!name){ toast('呼び名は空にできません'); return; }
+  s.name = name;
+  s.note = document.getElementById('e-note-'+id).value.trim();
+  editingStu = null;
+  await save(); renderStudents(); fillSelects(); renderRecent(); toast('保存しました');
+}
+
+/* ---------- タグの管理 ---------- */
+function renderTagAdmin(){
+  const el = document.getElementById('tag-admin');
+  if(!DB.tags.length){ el.innerHTML = '<div class="empty">タグがありません。記録タブから追加できます。</div>'; return; }
+  el.innerHTML = DB.tags.map(t=>{
+    const n = DB.records.filter(r=>r.tags.includes(t)).length;
+    return `<span class="item">${esc(t)}<span style="color:var(--ink-2);font-size:11px">${n}</span>
+      <button onclick="renameTag('${esc(t)}')" title="名前を変える">直す</button>
+      <button onclick="removeTag('${esc(t)}')" title="一覧から消す">消す</button></span>`;
+  }).join('');
+}
+async function renameTag(t){
+  const v = (prompt('新しいタグ名', t)||'').trim();
+  if(!v || v===t) return;
+  DB.tags = DB.tags.map(x=>x===t?v:x).filter((x,i,a)=>a.indexOf(x)===i);
+  DB.records.forEach(r=>{ r.tags = r.tags.map(x=>x===t?v:x).filter((x,i,a)=>a.indexOf(x)===i); });
+  if(sel.tags.has(t)){ sel.tags.delete(t); sel.tags.add(v); }
+  await save(); renderTagAdmin(); renderTags(); renderRecent(); toast('タグ名を変えました');
+}
+async function removeTag(t){
+  const n = DB.records.filter(r=>r.tags.includes(t)).length;
+  if(n && !confirm(`「${t}」を一覧から消します。\n過去の記録${n}件のタグはそのまま残ります。`)) return;
+  DB.tags = DB.tags.filter(x=>x!==t);
+  sel.tags.delete(t);
+  await save(); renderTagAdmin(); renderTags(); toast('一覧から消しました');
+}
+function fillSelects(){
+  const opts = DB.students.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  ['f-stu','a-stu','ai-stu'].forEach(id=>{
+    const el = document.getElementById(id);
+    const keep = el.value;
+    el.innerHTML = opts || '<option value="">（生徒を登録してください）</option>';
+    if(keep) el.value = keep;
+  });
+}
+
+/* ---------- 記録 ---------- */
+function renderTags(){
+  document.getElementById('f-tags').innerHTML = DB.tags.map(t=>
+    `<button type="button" class="chip" aria-pressed="${sel.tags.has(t)}" onclick="toggleTag('${esc(t)}')">${esc(t)}</button>`
+  ).join('');
+}
+function toggleTag(t){ sel.tags.has(t) ? sel.tags.delete(t) : sel.tags.add(t); renderTags(); }
+async function addTag(){
+  const v = document.getElementById('f-newtag').value.trim();
+  if(!v) return;
+  if(!DB.tags.includes(v)) DB.tags.push(v);
+  sel.tags.add(v);
+  document.getElementById('f-newtag').value='';
+  await save(); renderTags(); renderTagAdmin();
+}
+function setGrade(ok){
+  sel.correct = ok;
+  document.getElementById('g-ok').setAttribute('aria-pressed', String(ok));
+  document.getElementById('g-ng').setAttribute('aria-pressed', String(!ok));
+  document.getElementById('reason-box').hidden = ok;
+}
+async function saveRecord(){
+  const sid = document.getElementById('f-stu').value;
+  if(!sid){ toast('先に生徒を登録してください'); return; }
+  if(sel.correct===null){ toast('正解／不正解を選んでください'); return; }
+  DB.records.push({
+    id:'r'+Date.now(), sid,
+    date: document.getElementById('f-date').value || new Date().toISOString().slice(0,10),
+    src: document.getElementById('f-src').value.trim(),
+    tags:[...sel.tags],
+    correct: sel.correct,
+    reason: sel.correct ? '' : document.getElementById('f-reason').value,
+    memo: document.getElementById('f-memo').value.trim()
+  });
+  await save();
+  // 出典・タグは連続入力しやすいよう残す
+  document.getElementById('f-memo').value='';
+  sel.correct=null;
+  document.getElementById('g-ok').setAttribute('aria-pressed','false');
+  document.getElementById('g-ng').setAttribute('aria-pressed','false');
+  document.getElementById('reason-box').hidden = true;
+  renderRecent(); toast('記録しました');
+  document.getElementById('rec-hint').textContent = '出典とタグは残してあります。連続で記録できます。';
+}
+let showAll = false;
+let editingRec = null;
+let editState = { tags:new Set(), correct:null };
+
+function toggleAll(){
+  showAll = !showAll;
+  document.getElementById('btn-all').textContent = showAll ? '最近の分だけ' : 'すべて表示';
+  renderRecent();
+}
+
+function renderRecent(){
+  const el = document.getElementById('recent');
+  const all = [...DB.records].reverse();
+  const list = showAll ? all : all.slice(0,12);
+  if(!list.length){ el.innerHTML = '<div class="empty">1問目を記録すると、ここに並びます。</div>'; return; }
+
+  el.innerHTML = list.map(r=>{
+    if(editingRec === r.id) return recordEditor(r);
+    const s = DB.students.find(x=>x.id===r.sid);
+    return `<div class="log">
+      <div class="head">
+        <span class="mark ${r.correct?'o':'x'}">${r.correct?'○':'×'}</span>
+        <span class="src">${esc(r.src||'（出典なし）')}</span>
+        <span class="d">${esc(r.date)}</span>
+        <button class="btn ghost small" style="padding:3px 9px;font-size:11px" onclick="startEditRec('${r.id}')">編集</button>
+      </div>
+      <div class="tags">${esc(s?s.name:'?')}${r.tags.length?' ｜ '+esc(r.tags.join('・')):''}${r.reason?' ｜ '+esc(r.reason):''}${r.memo?' ｜ '+esc(r.memo):''}</div>
+    </div>`;
+  }).join('')
+  + (!showAll && all.length>12 ? `<p class="note">ほか ${all.length-12} 件</p>` : '');
+}
+
+function recordEditor(r){
+  const stuOpts = DB.students.map(s=>`<option value="${s.id}"${s.id===r.sid?' selected':''}>${esc(s.name)}</option>`).join('');
+  const chips = DB.tags.map(t=>`<button type="button" class="chip" aria-pressed="${editState.tags.has(t)}" onclick="toggleEditTag('${esc(t)}')">${esc(t)}</button>`).join('');
+  const reasonOpts = REASONS.map(x=>`<option${x===r.reason?' selected':''}>${x}</option>`).join('');
+  return `<div class="editing">
+    <div class="ttl">この記録を直す</div>
+    <label for="er-stu">生徒</label>
+    <select id="er-stu">${stuOpts}</select>
+    <label for="er-date">日付</label>
+    <input type="date" id="er-date" value="${esc(r.date)}">
+    <label for="er-src">出典</label>
+    <input type="text" id="er-src" value="${esc(r.src||'')}">
+    <label>分野タグ</label>
+    <div class="chips">${chips}</div>
+    <label>採点</label>
+    <div class="grade">
+      <button type="button" class="ok" aria-pressed="${editState.correct===true}" onclick="setEditGrade(true)">正解</button>
+      <button type="button" class="ng" aria-pressed="${editState.correct===false}" onclick="setEditGrade(false)">不正解</button>
+    </div>
+    <div ${editState.correct?'hidden':''} id="er-reason-box">
+      <label for="er-reason">つまずいた理由</label>
+      <select id="er-reason">${reasonOpts}</select>
+    </div>
+    <label for="er-memo">メモ</label>
+    <textarea id="er-memo">${esc(r.memo||'')}</textarea>
+    <div class="row" style="margin-top:12px">
+      <button class="btn small" onclick="saveEditRec('${r.id}')">保存する</button>
+      <button class="btn ghost small" onclick="editingRec=null;renderRecent()">やめる</button>
+      <button class="btn ghost small" style="margin-left:auto;border-color:var(--red);color:var(--red)" onclick="delRecord('${r.id}')">削除</button>
+    </div>
+  </div>`;
+}
+
+function startEditRec(id){
+  const r = DB.records.find(x=>x.id===id);
+  editingRec = id;
+  editState.tags = new Set(r.tags);
+  editState.correct = r.correct;
+  renderRecent();
+}
+function toggleEditTag(t){
+  editState.tags.has(t) ? editState.tags.delete(t) : editState.tags.add(t);
+  syncEditor();
+}
+function setEditGrade(ok){ editState.correct = ok; syncEditor(); }
+
+/* 入力中の値を保ったまま編集欄を描き直す */
+function syncEditor(){
+  const r = DB.records.find(x=>x.id===editingRec);
+  if(!r) return;
+  r._draft = {
+    sid: document.getElementById('er-stu').value,
+    date: document.getElementById('er-date').value,
+    src: document.getElementById('er-src').value,
+    memo: document.getElementById('er-memo').value
+  };
+  const d = r._draft;
+  const keep = {sid:r.sid, date:r.date, src:r.src, memo:r.memo};
+  Object.assign(r, {sid:d.sid, date:d.date, src:d.src, memo:d.memo});
+  renderRecent();
+  Object.assign(r, keep);
+  delete r._draft;
+}
+
+async function saveEditRec(id){
+  const r = DB.records.find(x=>x.id===id);
+  r.sid  = document.getElementById('er-stu').value;
+  r.date = document.getElementById('er-date').value;
+  r.src  = document.getElementById('er-src').value.trim();
+  r.memo = document.getElementById('er-memo').value.trim();
+  r.tags = [...editState.tags];
+  r.correct = editState.correct;
+  r.reason = r.correct ? '' : document.getElementById('er-reason').value;
+  editingRec = null;
+  await save(); renderRecent(); renderTagAdmin(); toast('保存しました');
+}
+async function delRecord(id){
+  if(!confirm('この記録を消します。よろしいですか？')) return;
+  DB.records = DB.records.filter(x=>x.id!==id);
+  editingRec = null;
+  await save(); renderRecent(); renderStudents(); toast('削除しました');
+}
+
+/* ---------- 分析 ---------- */
+function statsFor(sid){
+  const rs = DB.records.filter(r=>r.sid===sid);
+  const byTag = {};
+  rs.forEach(r=>r.tags.forEach(t=>{
+    byTag[t] = byTag[t] || {n:0,ok:0};
+    byTag[t].n++; if(r.correct) byTag[t].ok++;
+  }));
+  const byReason = {};
+  rs.filter(r=>!r.correct && r.reason).forEach(r=> byReason[r.reason]=(byReason[r.reason]||0)+1);
+  return {rs, byTag, byReason};
+}
+function pct(ok,n){ return n? Math.round(ok/n*100) : 0; }
+
+function renderAnalysis(){
+  const sid = document.getElementById('a-stu').value;
+  const el = document.getElementById('ana-body');
+  if(!sid){ el.innerHTML = '<div class="card"><div class="empty">生徒を登録すると分析できます。</div></div>'; return; }
+  const {rs, byTag, byReason} = statsFor(sid);
+  if(!rs.length){ el.innerHTML = '<div class="card"><div class="empty">この生徒の記録がまだありません。</div></div>'; return; }
+
+  const ok = rs.filter(r=>r.correct).length;
+  const half = Math.floor(rs.length/2);
+  const early = rs.slice(0,half), late = rs.slice(half);
+  const trend = (half>=2)
+    ? `前半 ${pct(early.filter(r=>r.correct).length, early.length)}% → 後半 ${pct(late.filter(r=>r.correct).length, late.length)}%`
+    : '記録が増えると変化が見えます';
+
+  const tagRows = Object.entries(byTag).sort((a,b)=>pct(a[1].ok,a[1].n)-pct(b[1].ok,b[1].n)).map(([t,v])=>{
+    const p = pct(v.ok,v.n);
+    const cls = p<50?'weak':(p<75?'mid':'');
+    return `<tr><td>${esc(t)}</td>
+      <td style="width:38%"><div class="bar ${cls}"><span style="width:${p}%"></span></div></td>
+      <td class="num">${p}%</td><td class="num">${v.ok}/${v.n}</td></tr>`;
+  }).join('');
+
+  const reasonRows = Object.entries(byReason).sort((a,b)=>b[1]-a[1])
+    .map(([r,c])=>`<tr><td>${esc(r)}</td><td class="num">${c} 回</td></tr>`).join('')
+    || '<tr><td colspan="2" style="color:var(--ink-2)">不正解の記録がありません</td></tr>';
+
+  el.innerHTML = `
+    <div class="card">
+      <h2>全体</h2>
+      <table><tbody>
+        <tr><td>記録した問題数</td><td class="num">${rs.length} 問</td></tr>
+        <tr><td>正答率</td><td class="num">${pct(ok,rs.length)}%（${ok}/${rs.length}）</td></tr>
+        <tr><td>変化</td><td class="num">${trend}</td></tr>
+      </tbody></table>
+    </div>
+    <div class="card">
+      <h2>分野ごとの正答率</h2>
+      <p class="note" style="margin:0 0 8px">低い順に並びます。ここが次に手を打つ場所です。</p>
+      <table><thead><tr><th>分野</th><th></th><th class="num">正答率</th><th class="num">内訳</th></tr></thead>
+      <tbody>${tagRows || '<tr><td colspan="4" style="color:var(--ink-2)">タグ付きの記録がありません</td></tr>'}</tbody></table>
+    </div>
+    <div class="card">
+      <h2>つまずいた理由の内訳</h2>
+      <p class="note" style="margin:0 0 8px">同じ理由が続くなら、問題ではなく学習法を変える合図です。</p>
+      <table><tbody>${reasonRows}</tbody></table>
+    </div>`;
+}
+
+/* ---------- 画像とAI ---------- */
+const KEYSTORE = 'juku-karte-apikey';
+function saveKey(){
+  try{ localStorage.setItem(KEYSTORE, document.getElementById('apikey').value.trim()); toast('キーを保存しました'); }catch(e){}
+}
+function loadKey(){
+  try{ return localStorage.getItem(KEYSTORE) || ''; }catch(e){ return ''; }
+}
+
+/* 写真は縮小してから送る（そのままだと重すぎて失敗するため） */
+function shrink(file, max=1200){
+  return new Promise((res, rej)=>{
+    const fr = new FileReader();
+    fr.onerror = ()=>rej(new Error('画像を読めませんでした'));
+    fr.onload = ()=>{
+      const img = new Image();
+      img.onerror = ()=>rej(new Error('画像を読めませんでした'));
+      img.onload = ()=>{
+        const scale = Math.min(1, max/Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width*scale);
+        c.height = Math.round(img.height*scale);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        const url = c.toDataURL('image/jpeg', 0.8);
+        res({ data:url.split(',')[1], url });
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+async function callClaude(content){
+  const key = loadKey();
+  const headers = { 'Content-Type':'application/json' };
+  if(key){
+    headers['x-api-key'] = key;
+    headers['anthropic-version'] = '2023-06-01';
+    headers['anthropic-dangerous-direct-browser-access'] = 'true';
+  }
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST', headers,
+    body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:1000, messages:[{role:'user', content}] })
+  });
+  if(!res.ok) throw new Error('AIに届きませんでした（' + res.status + '）');
+  const d = await res.json();
+  return d.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
+}
+
+/* --- 記録タブ：写真から出典とタグを下書き --- */
+async function analyzePhoto(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const thumb = document.getElementById('pic-thumb');
+  const busy  = document.getElementById('pic-busy');
+  const out   = document.getElementById('pic-result');
+  out.hidden = true;
+  try{
+    const {data, url} = await shrink(file);
+    thumb.src = url; thumb.hidden = false;
+    busy.hidden = false;
+    const text = await callClaude([
+      { type:'image', source:{ type:'base64', media_type:'image/jpeg', data } },
+      { type:'text', text:
+`この画像は英語の問題です。中身は保存しないので、分類のための情報だけ答えてください。
+
+使えるタグ一覧：${DB.tags.join('、')}
+
+次のJSONだけを返してください。前置きもコードブロックも不要です。
+{"src":"出典が読み取れれば書く。なければ空文字","tags":["該当する分野タグ。一覧になければ新しく作ってよい"],"memo":"何の力が問われる問題か、20字程度"}` }
+    ]);
+    const j = JSON.parse(text.replace(/```json|```/g,'').trim());
+
+    if(j.src) document.getElementById('f-src').value = j.src;
+    if(j.memo) document.getElementById('f-memo').value = j.memo;
+    (j.tags||[]).forEach(t=>{
+      if(!DB.tags.includes(t)) DB.tags.push(t);
+      sel.tags.add(t);
+    });
+    await save(); renderTags(); renderTagAdmin();
+    out.textContent = '下書きしました。中身を確かめて直してください。';
+    out.hidden = false;
+  }catch(e){
+    out.textContent = e.message + ' 手で入力してください。';
+    out.hidden = false;
+  }finally{
+    busy.hidden = true;
+    input.value = '';
+    setTimeout(()=>{ thumb.hidden = true; thumb.src = ''; }, 2500); // 画像は残さない
+  }
+}
+
+/* --- AI相談タブ：写真を添える --- */
+let attached = null;
+async function attachPhoto(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  try{
+    const {data, url} = await shrink(file);
+    attached = data;
+    const t = document.getElementById('ai-thumb');
+    t.src = url; t.hidden = false;
+    document.getElementById('ai-thumb-row').hidden = false;
+  }catch(e){ toast(e.message); }
+  input.value = '';
+}
+function clearPhoto(){
+  attached = null;
+  const t = document.getElementById('ai-thumb');
+  t.hidden = true; t.src = '';
+  document.getElementById('ai-thumb-row').hidden = true;
+}
+
+async function runConsult(){
+  const out  = document.getElementById('ai-out');
+  const busy = document.getElementById('ai-busy');
+  if(!buildPrompt()) return;
+  const prompt = out.textContent;
+  busy.hidden = false;
+  out.textContent = '';
+  try{
+    const content = [];
+    if(attached) content.push({ type:'image', source:{ type:'base64', media_type:'image/jpeg', data:attached } });
+    content.push({ type:'text', text: prompt + (attached ? '\n\n添付した写真も踏まえて答えてください。写真の中身は記録に残しません。' : '') });
+    out.textContent = await callClaude(content);
+    clearPhoto();
+  }catch(e){
+    out.textContent = e.message + '\n\n「文章だけ作る」でコピーして、AIチャットに貼っても同じことができます。';
+  }finally{ busy.hidden = true; }
+}
+
+/* ---------- AI用の文章 ---------- */
+function buildPrompt(){
+  const sid = document.getElementById('ai-stu').value;
+  const out = document.getElementById('ai-out');
+  if(!sid){ out.textContent='生徒を登録してください。'; return false; }
+  const s = DB.students.find(x=>x.id===sid);
+  const {rs, byTag, byReason} = statsFor(sid);
+  if(!rs.length){ out.textContent='この生徒の記録がまだありません。'; return false; }
+
+  const tags = Object.entries(byTag).sort((a,b)=>pct(a[1].ok,a[1].n)-pct(b[1].ok,b[1].n))
+    .map(([t,v])=>`・${t}：正答率 ${pct(v.ok,v.n)}%（${v.ok}/${v.n}）`).join('\n');
+  const reasons = Object.entries(byReason).sort((a,b)=>b[1]-a[1])
+    .map(([r,c])=>`・${r}：${c}回`).join('\n') || '・（記録なし）';
+  const memos = rs.filter(r=>r.memo).slice(-6).map(r=>`・${r.date} ${r.memo}`).join('\n') || '・（記録なし）';
+  const ok = rs.filter(r=>r.correct).length;
+
+  out.textContent =
+`塾講師です。担当生徒について相談します。問題文そのものは著作権上お渡しできないため、記録した内容の要約のみです。
+
+【生徒】${s.name}
+【状況】${s.note||'（メモなし）'}
+【記録した問題数】${rs.length}問（正答率 ${pct(ok,rs.length)}%）
+
+【分野ごとの正答率（低い順）】
+${tags||'・（タグ付きの記録なし）'}
+
+【つまずいた理由の内訳】
+${reasons}
+
+【授業メモ（直近）】
+${memos}
+
+【相談したいこと】
+${document.getElementById('ai-ask').value}
+
+正答率が低い分野を優先し、この生徒の状況に合わせて具体的に提案してください。`;
+  return true;
+}
+function copyPrompt(){
+  const t = document.getElementById('ai-out').textContent;
+  navigator.clipboard.writeText(t).then(()=>toast('コピーしました'), ()=>toast('コピーできませんでした'));
+}
+
+/* ---------- 書き出し ---------- */
+function dl(name, text, type){
+  const b = new Blob([text], {type});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  toast('書き出しました');
+}
+function exportCSV(){
+  const q = v => '"' + String(v??'').replace(/"/g,'""') + '"';
+  const rows = [['日付','生徒','出典','分野タグ','正誤','理由','メモ'].map(q).join(',')];
+  DB.records.forEach(r=>{
+    const s = DB.students.find(x=>x.id===r.sid);
+    rows.push([r.date, s?s.name:'', r.src, r.tags.join('・'), r.correct?'○':'×', r.reason, r.memo].map(q).join(','));
+  });
+  dl('karte.csv', '\uFEFF'+rows.join('\n'), 'text/csv;charset=utf-8');
+}
+function exportJSON(){ dl('karte-'+new Date().toISOString().slice(0,10)+'.json', JSON.stringify(DB,null,2), 'application/json'); }
+
+/* 読み込みは「足す」方式。同じ記録は重複させない */
+function importJSON(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const msg = document.getElementById('imp-msg');
+  const fr = new FileReader();
+  fr.onload = async ()=>{
+    try{
+      const inc = JSON.parse(fr.result);
+      if(!inc || !Array.isArray(inc.records) || !Array.isArray(inc.students)) throw new Error('形式が違います');
+
+      const sIds = new Set(DB.students.map(s=>s.id));
+      const rIds = new Set(DB.records.map(r=>r.id));
+      let ns=0, nr=0;
+      inc.students.forEach(s=>{ if(!sIds.has(s.id)){ DB.students.push(s); ns++; } });
+      inc.records.forEach(r=>{ if(!rIds.has(r.id)){ DB.records.push(r); nr++; } });
+      (inc.tags||[]).forEach(t=>{ if(!DB.tags.includes(t)) DB.tags.push(t); });
+      DB.records.sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+
+      await save();
+      renderStudents(); fillSelects(); renderTags(); renderRecent(); renderTagAdmin();
+      msg.textContent = `読み込みました。生徒 ${ns} 人、記録 ${nr} 件を足しました。`;
+      msg.hidden = false;
+      toast('読み込みました');
+    }catch(e){
+      msg.textContent = '読み込めませんでした。書き出したJSONファイルを選んでください。';
+      msg.hidden = false;
+    }
+    input.value = '';
+  };
+  fr.onerror = ()=>{ msg.textContent='ファイルを開けませんでした。'; msg.hidden=false; };
+  fr.readAsText(file);
+}
+
+/* ---------- 起動 ---------- */
+(async function init(){
+  const saved = await load();
+  if(saved){ DB = Object.assign(DB, saved); if(!DB.tags||!DB.tags.length) DB.tags=[...DEFAULT_TAGS]; }
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('f-reason').innerHTML = REASONS.map(r=>`<option>${r}</option>`).join('');
+  document.getElementById('apikey').value = loadKey();
+  const w = document.getElementById('store-where');
+  if(hasCloud){ w.textContent = 'Claude内（この会話に紐づきます）'; }
+  else{
+    let ok = false;
+    try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); ok = true; }catch(e){}
+    w.textContent = ok ? 'この端末のブラウザ（閉じても残ります）' : 'この端末に保存できません。書き出しで控えを取ってください';
+  }
+  renderStudents(); fillSelects(); renderTags(); renderRecent(); renderTagAdmin();
+})();
+</script>
+</body>
+</html>
